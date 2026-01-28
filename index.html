@@ -27,32 +27,37 @@ const ctx = canvas.getContext("2d");
 
 /* ---------- Assets ---------- */
 const birdImg = new Image();
-birdImg.src = "hari.jpeg";
+birdImg.src = "anu.jpeg";
 
 const pipeImg = new Image();
-pipeImg.src = "anu.jpeg";
+pipeImg.src = "anu1.jpeg"; // or hari.jpeg if you didn't rename
 
 const jumpSound = new Audio("p.mp3");
 const loseSound = new Audio("p1.mp3");
 
-/* ---------- Game Variables ---------- */
-let bird = {
-    x: 80,
-    y: 200,
-    width: 100,
-    height: 100,
-    gravity: 0.5,
-    lift: -8,
-    velocity: 0
-};
+/* ---------- Game State ---------- */
+let bird, pipes, frame, gameOver;
 
-let pipes = [];
-let frame = 0;
-let gameOver = false;
+/* ---------- Init / Reset ---------- */
+function init() {
+    bird = {
+        x: 80,
+        y: 200,
+        width: 40,
+        height: 40,
+        gravity: 0.5,
+        lift: -8,
+        velocity: 0
+    };
+    pipes = [];
+    frame = 0;
+    gameOver = false;
+    draw();
+}
 
 /* ---------- Controls ---------- */
 document.addEventListener("keydown", jump);
-document.addEventListener("click", jump);
+document.addEventListener("click", handleClick);
 
 function jump() {
     if (!gameOver) {
@@ -62,16 +67,31 @@ function jump() {
     }
 }
 
+function handleClick(e) {
+    if (!gameOver) {
+        jump();
+    } else {
+        // Restart button area
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (x > 130 && x < 270 && y > 320 && y < 360) {
+            init();
+        }
+    }
+}
+
 /* ---------- Pipes ---------- */
 function createPipe() {
-    let gap = 300;
-    let topHeight = Math.random() * 150 + 60;
+    let gap = 140;
+    let topHeight = Math.random() * 250 + 50;
 
     pipes.push({
         x: canvas.width,
         top: topHeight,
         bottom: topHeight + gap,
-        width: 100
+        width: 60
     });
 }
 
@@ -86,53 +106,31 @@ function hitPipe(pipe) {
 
 /* ---------- Game Loop ---------- */
 function draw() {
-    if (gameOver) return;
+    if (gameOver) {
+        drawGameOver();
+        return;
+    }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    /* Bird physics */
     bird.velocity += bird.gravity;
     bird.y += bird.velocity;
 
-    /* Draw bird */
     ctx.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
 
-    /* Create pipes */
-    if (frame % 90 === 0) {
-        createPipe();
-    }
+    if (frame % 90 === 0) createPipe();
 
-    /* Draw pipes */
     pipes.forEach(pipe => {
         pipe.x -= 2;
 
-        // Top pipe
-        ctx.drawImage(
-            pipeImg,
-            pipe.x,
-            pipe.top - 400,
-            pipe.width,
-            400
-        );
+        ctx.drawImage(pipeImg, pipe.x, pipe.top - 400, pipe.width, 400);
+        ctx.drawImage(pipeImg, pipe.x, pipe.bottom, pipe.width, 400);
 
-        // Bottom pipe
-        ctx.drawImage(
-            pipeImg,
-            pipe.x,
-            pipe.bottom,
-            pipe.width,
-            400
-        );
-
-        if (hitPipe(pipe)) {
-            endGame();
-        }
+        if (hitPipe(pipe)) endGame();
     });
 
-    /* Remove old pipes */
-    pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+    pipes = pipes.filter(p => p.x + p.width > 0);
 
-    /* Ground / ceiling collision */
     if (bird.y + bird.height > canvas.height || bird.y < 0) {
         endGame();
     }
@@ -141,23 +139,37 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
-/* ---------- End Game ---------- */
+/* ---------- Game Over ---------- */
 function endGame() {
     if (!gameOver) {
         gameOver = true;
+        loseSound.currentTime = 0;
         loseSound.play();
-
-        ctx.fillStyle = "black";
-        ctx.font = "30px Arial";
-        ctx.fillText("Game Over 😭", 100, 300);
-        ctx.font = "16px Arial";
-        ctx.fillText("Refresh to Play Again", 115, 340);
     }
 }
 
+function drawGameOver() {
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.fillText("Game Over 😭", 100, 260);
+
+    // Restart button
+    ctx.fillStyle = "#ffcc00";
+    ctx.fillRect(130, 320, 140, 40);
+
+    ctx.fillStyle = "black";
+    ctx.font = "20px Arial";
+    ctx.fillText("Restart", 165, 348);
+}
+
 /* ---------- Start ---------- */
-draw();
+init();
 </script>
+
 
 </body>
 </html>
+

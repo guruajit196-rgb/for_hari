@@ -1,22 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title><b>FLAPPY BIRD</b></title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #70c5ce;
-            text-align: center;
-        }
-        canvas {
-            display: block;
-            margin: auto;
-            background: #70c5ce;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Flappy Hari</title>
+
+<style>
+    body {
+        margin: 0;
+        background: #70c5ce;
+        overflow: hidden;
+        text-align: center;
+    }
+
+    canvas {
+        display: block;
+        margin: auto;
+        background: #70c5ce;
+        touch-action: none; /* REQUIRED for mobile */
+    }
+</style>
 </head>
+
 <body>
 
 <canvas id="game" width="400" height="600"></canvas>
@@ -27,10 +31,10 @@ const ctx = canvas.getContext("2d");
 
 /* ---------- Assets ---------- */
 const birdImg = new Image();
-birdImg.src = "hari.jpeg";
+birdImg.src = "hari.jpeg";     // BIRD
 
 const pipeImg = new Image();
-pipeImg.src = "anu.jpeg"; // or hari.jpeg if you didn't rename
+pipeImg.src = "anu.jpeg";      // PILLARS
 
 const jumpSound = new Audio("p.mp3");
 const loseSound = new Audio("p1.mp3");
@@ -49,43 +53,56 @@ function init() {
         lift: -8,
         velocity: 0
     };
+
     pipes = [];
     frame = 0;
     gameOver = false;
+
     draw();
 }
 
 /* ---------- Controls ---------- */
-document.addEventListener("keydown", jump);
-document.addEventListener("click", handleClick);
 
-function jump() {
-    if (!gameOver) {
-        bird.velocity = bird.lift;
-        jumpSound.currentTime = 0;
-        jumpSound.play();
-    }
-}
+// Keyboard
+document.addEventListener("keydown", () => {
+    if (!gameOver) jump();
+});
 
-function handleClick(e) {
+// Mouse (desktop)
+canvas.addEventListener("mousedown", handleInput);
+
+// Touch (mobile)
+canvas.addEventListener("touchstart", handleInput, { passive: false });
+
+function handleInput(e) {
+    e.preventDefault();
+
     if (!gameOver) {
         jump();
     } else {
-        // Restart button area
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const point = e.touches ? e.touches[0] : e;
 
+        const x = point.clientX - rect.left;
+        const y = point.clientY - rect.top;
+
+        // Restart button bounds
         if (x > 130 && x < 270 && y > 320 && y < 360) {
             init();
         }
     }
 }
 
+function jump() {
+    bird.velocity = bird.lift;
+    jumpSound.currentTime = 0;
+    jumpSound.play();
+}
+
 /* ---------- Pipes ---------- */
 function createPipe() {
-    let gap = 140;
-    let topHeight = Math.random() * 250 + 50;
+    const gap = 140;
+    const topHeight = Math.random() * 250 + 50;
 
     pipes.push({
         x: canvas.width,
@@ -113,11 +130,13 @@ function draw() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Bird physics
     bird.velocity += bird.gravity;
     bird.y += bird.velocity;
 
     ctx.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
 
+    // Pipes
     if (frame % 90 === 0) createPipe();
 
     pipes.forEach(pipe => {
@@ -131,6 +150,7 @@ function draw() {
 
     pipes = pipes.filter(p => p.x + p.width > 0);
 
+    // Ground / ceiling
     if (bird.y + bird.height > canvas.height || bird.y < 0) {
         endGame();
     }
@@ -165,12 +185,9 @@ function drawGameOver() {
     ctx.fillText("Restart", 165, 348);
 }
 
-/* ---------- Start ---------- */
+/* ---------- Start Game ---------- */
 init();
 </script>
 
-
 </body>
 </html>
-
-
